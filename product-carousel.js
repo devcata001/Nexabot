@@ -214,80 +214,84 @@ function buildMiniDrone(scene, accent) {
     return g;
 }
 
-/* ── Spawn a mini robot on each product canvas ──────────────── */
+/* ── Spawn a mini robot on each product canvas (lazy — only when visible) ── */
 document.querySelectorAll('.product-mini-canvas').forEach(canvas => {
-    const model = canvas.dataset.model;
-    const { renderer, scene, camera, accentColor } = makeProductScene(canvas, model);
-    const cfg = COLORS[model] || COLORS.sentinel;
+    const ob = new IntersectionObserver((entries) => {
+        if (!entries[0].isIntersecting) return;
+        ob.disconnect(); // init once, then stop observing
 
-    let robot;
-    if (model === 'nexarm') {
-        robot = buildMiniArm(scene, cfg.accent);
-    } else if (model === 'drone') {
-        robot = buildMiniDrone(scene, cfg.accent);
-    } else {
-        robot = buildMiniHumanoid(scene, cfg.accent, cfg.body);
-    }
-    scene.add(robot);
+        const model = canvas.dataset.model;
+        const { renderer, scene, camera, accentColor } = makeProductScene(canvas, model);
+        const cfg = COLORS[model] || COLORS.sentinel;
 
-    // Floating platform ring
-    const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(.6, .01, 8, 60),
-        new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: .5 })
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = .01;
-    scene.add(ring);
-
-    let t = Math.random() * 100;
-    let hovered = false;
-    const card = canvas.closest('.product-card');
-    if (card) {
-        card.addEventListener('mouseenter', () => { hovered = true; });
-        card.addEventListener('mouseleave', () => { hovered = false; });
-    }
-
-    (function animate() {
-        requestAnimationFrame(animate);
-        t += hovered ? .025 : .012;
-
-        robot.rotation.y = t * (hovered ? .9 : .4);
-        robot.position.y = .04 + Math.sin(t * (hovered ? 1.8 : .7)) * .06;
-
-        if (model === 'drone') {
-            // Spin props
-            for (let i = 0; i < 4; i++) {
-                const prop = scene.getObjectByName(`prop${i}`);
-                if (prop) prop.rotation.z += hovered ? .3 : .12;
-            }
+        let robot;
+        if (model === 'nexarm') {
+            robot = buildMiniArm(scene, cfg.accent);
+        } else if (model === 'drone') {
+            robot = buildMiniDrone(scene, cfg.accent);
         } else {
-            const armL = robot.getObjectByName('armL');
-            const armR = robot.getObjectByName('armR');
-            const speed = hovered ? 1.5 : .6;
-            if (armL) armL.rotation.x = Math.sin(t * speed) * .3;
-            if (armR) armR.rotation.x = -Math.sin(t * speed) * .3;
-            if (armR) armR.rotation.z = .18 + (hovered ? Math.sin(t * 2) * .2 : 0);
+            robot = buildMiniHumanoid(scene, cfg.accent, cfg.body);
+        }
+        scene.add(robot);
+
+        // Floating platform ring
+        const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(.6, .01, 8, 60),
+            new THREE.MeshBasicMaterial({ color: accentColor, transparent: true, opacity: .5 })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = .01;
+        scene.add(ring);
+
+        let t = Math.random() * 100;
+        let hovered = false;
+        const card = canvas.closest('.product-card');
+        if (card) {
+            card.addEventListener('mouseenter', () => { hovered = true; });
+            card.addEventListener('mouseleave', () => { hovered = false; });
         }
 
-        // Eye glow pulse
-        const eyeL = robot.getObjectByName('eyeL');
-        const eyeR = robot.getObjectByName('eyeR');
-        if (eyeL && eyeR) {
-            const intensity = hovered
-                ? 1.8 + Math.sin(t * 4) * .8
-                : 0.8 + Math.sin(t * 1.5) * .3;
-            eyeL.material.emissiveIntensity = eyeR.material.emissiveIntensity = intensity;
-        }
+        (function animate() {
+            requestAnimationFrame(animate);
+            t += hovered ? .025 : .012;
 
-        // Head bob
-        const head = robot.getObjectByName('head');
-        if (head) head.rotation.y = Math.sin(t * .7) * (hovered ? .4 : .15);
+            robot.rotation.y = t * (hovered ? .9 : .4);
+            robot.position.y = .04 + Math.sin(t * (hovered ? 1.8 : .7)) * .06;
 
-        ring.rotation.z += hovered ? .02 : .006;
-        ring.material.opacity = .4 + Math.sin(t * 2) * .2;
+            if (model === 'drone') {
+                for (let i = 0; i < 4; i++) {
+                    const prop = scene.getObjectByName(`prop${i}`);
+                    if (prop) prop.rotation.z += hovered ? .3 : .12;
+                }
+            } else {
+                const armL = robot.getObjectByName('armL');
+                const armR = robot.getObjectByName('armR');
+                const speed = hovered ? 1.5 : .6;
+                if (armL) armL.rotation.x = Math.sin(t * speed) * .3;
+                if (armR) armR.rotation.x = -Math.sin(t * speed) * .3;
+                if (armR) armR.rotation.z = .18 + (hovered ? Math.sin(t * 2) * .2 : 0);
+            }
 
-        renderer.render(scene, camera);
-    })();
+            const eyeL = robot.getObjectByName('eyeL');
+            const eyeR = robot.getObjectByName('eyeR');
+            if (eyeL && eyeR) {
+                const intensity = hovered
+                    ? 1.8 + Math.sin(t * 4) * .8
+                    : 0.8 + Math.sin(t * 1.5) * .3;
+                eyeL.material.emissiveIntensity = eyeR.material.emissiveIntensity = intensity;
+            }
+
+            const head = robot.getObjectByName('head');
+            if (head) head.rotation.y = Math.sin(t * .7) * (hovered ? .4 : .15);
+
+            ring.rotation.z += hovered ? .02 : .006;
+            ring.material.opacity = .4 + Math.sin(t * 2) * .2;
+
+            renderer.render(scene, camera);
+        })();
+    }, { rootMargin: '120px' });
+
+    ob.observe(canvas);
 });
 
 /* ══════════════════════════════════════════════════════════════

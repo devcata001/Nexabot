@@ -367,7 +367,7 @@ function buildRobot(opts = {}) {
     const canvas = document.getElementById('heroCanvas');
     if (!canvas) return;
 
-    const { renderer, scene, camera, keyLight } = makeScene(canvas, { cx: 0, cy: 1.3, cz: 4.8, lx: 0, ly: 1 });
+    const { renderer, scene, camera, keyLight } = makeScene(canvas, { cx: 2.2, cy: 1.3, cz: 5.5, lx: 2.2, ly: 1 });
 
     /* Floor reflection grid */
     const gridHelper = new THREE.GridHelper(14, 30, NEON_BLUE, 0x050e1a);
@@ -386,7 +386,7 @@ function buildRobot(opts = {}) {
 
     /* Hero Robot */
     const robot = buildRobot({ scale: 1, accentColor: NEON_BLUE });
-    robot.position.set(0, 0.05, 0);
+    robot.position.set(2.2, 0.05, 0);
     scene.add(robot);
 
     /* Holographic ring platform */
@@ -394,7 +394,7 @@ function buildRobot(opts = {}) {
     const ringMat = new THREE.MeshBasicMaterial({ color: NEON_BLUE, transparent: true, opacity: .6 });
     const ring1 = new THREE.Mesh(ringGeo, ringMat);
     ring1.rotation.x = -Math.PI / 2;
-    ring1.position.set(0, 0.02, 0);
+    ring1.position.set(2.2, 0.02, 0);
     scene.add(ring1);
 
     const ring2 = new THREE.Mesh(
@@ -402,7 +402,7 @@ function buildRobot(opts = {}) {
         new THREE.MeshBasicMaterial({ color: NEON_PURPLE, transparent: true, opacity: .4 })
     );
     ring2.rotation.x = -Math.PI / 2;
-    ring2.position.set(0, 0.02, 0);
+    ring2.position.set(2.2, 0.02, 0);
     scene.add(ring2);
 
     /* Floating particles around robot */
@@ -421,6 +421,7 @@ function buildRobot(opts = {}) {
     partGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
     const partMat = new THREE.PointsMaterial({ color: NEON_BLUE, size: .04, transparent: true, opacity: .7 });
     const partSystem = new THREE.Points(partGeo, partMat);
+    partSystem.position.x = 2.2;
     scene.add(partSystem);
 
     /* Mouse tracking for robot head */
@@ -446,6 +447,7 @@ function buildRobot(opts = {}) {
         }
 
         // Breathe / idle
+        robot.position.x = 2.2;
         robot.position.y = .05 + Math.sin(t) * .04;
         robot.rotation.y = Math.sin(t * .3) * .12;
 
@@ -683,43 +685,119 @@ function buildRobot(opts = {}) {
 })();
 
 /* ══════════════════════════════════════════════════════════════
-   12.  AVATAR CANVASES (testimonials)
+   12.  AVATAR CANVASES (testimonials) — 2D canvas, no WebGL
 ══════════════════════════════════════════════════════════════ */
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
 document.querySelectorAll('.avatar-canvas').forEach(canvas => {
-    const color = canvas.dataset.color || '#00f5ff';
-    const { renderer, scene, camera } = makeScene(canvas, { cx: 0, cy: 0, cz: 2.2, fov: 60, ly: 0 });
+    const colorHex = canvas.dataset.color || '#00f5ff';
+    // Size the canvas to its rendered CSS size
+    const setSize = () => {
+        const r = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = (r.width || 64) * dpr;
+        canvas.height = (r.height || 64) * dpr;
+    };
+    setSize();
+    window.addEventListener('resize', debounce(setSize, 200));
 
-    // Mini robot head
-    const head = new THREE.Mesh(
-        new THREE.BoxGeometry(.7, .65, .65),
-        new THREE.MeshStandardMaterial({ color: 0x0a1628, metalness: .9, roughness: .2 })
-    );
-    scene.add(head);
-
-    const eyeGeo = new THREE.BoxGeometry(.18, .1, .08);
-    const eyeMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.4, transparent: true, opacity: .85 });
-    [-1, 1].forEach(s => {
-        const eye = new THREE.Mesh(eyeGeo, eyeMat.clone());
-        eye.position.set(s * .18, .05, .33);
-        scene.add(eye);
-    });
-
-    const mouth = new THREE.Mesh(
-        new THREE.BoxGeometry(.3, .06, .08),
-        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: .8 })
-    );
-    mouth.position.set(0, -.2, .33);
-    scene.add(mouth);
-
+    const ctx = canvas.getContext('2d');
     let t = Math.random() * 100;
-    function animate() {
-        requestAnimationFrame(animate);
-        t += .02;
-        head.rotation.y = Math.sin(t * .5) * .25;
-        head.rotation.x = Math.sin(t * .3) * .1;
-        renderer.render(scene, camera);
-    }
-    animate();
+
+    (function draw() {
+        requestAnimationFrame(draw);
+        t += 0.022;
+        const W = canvas.width, H = canvas.height;
+        const s = Math.min(W, H);
+        const cx = W / 2, cy = H / 2;
+        ctx.clearRect(0, 0, W, H);
+
+        // Background disc
+        ctx.fillStyle = '#07111f';
+        ctx.beginPath();
+        ctx.arc(cx, cy, s * .47, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pulsing outer ring
+        ctx.strokeStyle = colorHex;
+        ctx.lineWidth = s * .018;
+        ctx.globalAlpha = .22 + Math.sin(t * 1.4) * .1;
+        ctx.shadowBlur = s * .1; ctx.shadowColor = colorHex;
+        ctx.beginPath(); ctx.arc(cx, cy, s * .44, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+        // Head (wobbling)
+        const headW = s * .44, headH = s * .40;
+        ctx.save();
+        ctx.translate(cx, cy + s * .02);
+        ctx.rotate(Math.sin(t * .45) * .14);
+
+        // Head body
+        ctx.fillStyle = '#0d2040';
+        roundRect(ctx, -headW / 2, -headH / 2, headW, headH, s * .06);
+        ctx.fill();
+
+        // Visor strip (subtle)
+        ctx.fillStyle = colorHex;
+        ctx.globalAlpha = .1;
+        roundRect(ctx, -headW * .42, -headH * .12, headW * .84, headH * .22, s * .02);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Eyes
+        const eyeW = s * .11, eyeH = s * .065;
+        const eyeGlow = .75 + Math.sin(t * 2.2) * .3;
+        ctx.shadowBlur = s * .12; ctx.shadowColor = colorHex;
+        ctx.fillStyle = colorHex;
+        ctx.globalAlpha = eyeGlow;
+        [-1, 1].forEach(side => {
+            roundRect(ctx, side * s * .125 - eyeW / 2, -headH * .1, eyeW, eyeH, eyeH * .35);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+        // Mouth
+        ctx.strokeStyle = colorHex;
+        ctx.lineWidth = s * .025;
+        ctx.globalAlpha = .6;
+        ctx.shadowBlur = s * .05; ctx.shadowColor = colorHex;
+        ctx.beginPath();
+        ctx.moveTo(-s * .1, headH * .2);
+        ctx.lineTo(s * .1, headH * .2);
+        ctx.stroke();
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+
+        ctx.restore();
+
+        // Antenna
+        const antBaseY = cy + s * .02 - headH / 2;
+        ctx.strokeStyle = colorHex;
+        ctx.lineWidth = s * .018;
+        ctx.globalAlpha = .65;
+        ctx.shadowBlur = s * .06; ctx.shadowColor = colorHex;
+        ctx.beginPath();
+        ctx.moveTo(cx, antBaseY);
+        ctx.lineTo(cx, antBaseY - s * .14);
+        ctx.stroke();
+        ctx.fillStyle = colorHex;
+        ctx.globalAlpha = .9;
+        ctx.beginPath();
+        ctx.arc(cx, antBaseY - s * .16, s * .028, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    })();
 });
 
 /* ══════════════════════════════════════════════════════════════

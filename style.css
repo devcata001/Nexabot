@@ -407,18 +407,18 @@ canvas {
     height: 100%;
 }
 
-.hero-canvas-wrap {
-    flex: 0 0 50%;
-    position: relative;
-    height: 100%;
-}
-
 #heroCanvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     z-index: 1;
+}
+
+.hero-canvas-wrap {
+    flex: 0 0 50%;
+    position: relative;
+    height: 100%;
 }
 
 #particleCanvas {
@@ -1717,14 +1717,9 @@ canvas {
         /* clear navbar */
     }
 
-    /* Robot goes first on mobile */
+    /* Spacer not needed on mobile — canvas is a full-section overlay */
     .hero-canvas-wrap {
-        order: -1;
-        flex: none;
-        width: 100%;
-        height: 44vw;
-        min-height: 200px;
-        max-height: 320px;
+        display: none;
     }
 
     .hero-content {

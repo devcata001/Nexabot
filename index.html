@@ -72,11 +72,12 @@
     <!-- ─── HERO ──────────────────────────────────────────────────── -->
     <section class="hero" id="hero">
 
-        <!-- Full-section backgrounds -->
+        <!-- Full-section layers (all absolute) -->
+        <canvas id="heroCanvas" role="img" aria-label="Animated 3D NexaBot hero robot scene"></canvas>
         <canvas id="particleCanvas" aria-hidden="true"></canvas>
         <div class="hero-grid"></div>
 
-        <!-- Split layout: text left | robot right -->
+        <!-- Split layout: text left | spacer right -->
         <div class="hero-split">
 
             <div class="hero-content">
@@ -120,10 +121,8 @@
                 </div>
             </div>
 
-            <!-- Right half: 3D robot canvas -->
-            <div class="hero-canvas-wrap">
-                <canvas id="heroCanvas" role="img" aria-label="Animated 3D NexaBot hero robot scene"></canvas>
-            </div>
+            <!-- Flex spacer so text stays left while robot fills right half of the shared canvas -->
+            <div class="hero-canvas-wrap" aria-hidden="true"></div>
 
         </div><!-- /.hero-split -->
 

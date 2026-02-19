@@ -1722,7 +1722,18 @@ canvas {
         display: none;
     }
 
+    /* Text protection — gradient behind content on mobile */
+    .hero-content::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: radial-gradient(ellipse 90% 80% at 50% 40%, rgba(2, 4, 8, .72) 40%, transparent 100%);
+        pointer-events: none;
+    }
+
     .hero-content {
+        position: relative;
         flex: none;
         width: 100%;
         align-items: center;

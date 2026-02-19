@@ -369,6 +369,22 @@ function buildRobot(opts = {}) {
 
     const { renderer, scene, camera, keyLight } = makeScene(canvas, { cx: 2.2, cy: 1.3, cz: 5.5, lx: 2.2, ly: 1 });
 
+    /* Responsive layout helper */
+    function isMobile() { return window.innerWidth <= 768; }
+
+    function applyLayout() {
+        if (isMobile()) {
+            camera.position.set(0, 1.1, 9.5);
+            camera.lookAt(0, 0.8, 0);
+        } else {
+            camera.position.set(2.2, 1.3, 5.5);
+            camera.lookAt(2.2, 1, 0);
+        }
+        camera.updateProjectionMatrix();
+    }
+    applyLayout();
+    window.addEventListener('resize', debounce(applyLayout, 120));
+
     /* Floor reflection grid */
     const gridHelper = new THREE.GridHelper(14, 30, NEON_BLUE, 0x050e1a);
     gridHelper.material.transparent = true;
@@ -447,8 +463,14 @@ function buildRobot(opts = {}) {
         }
 
         // Breathe / idle
-        robot.position.x = 2.2;
-        robot.position.y = .05 + Math.sin(t) * .04;
+        const mobile = window.innerWidth <= 768;
+        robot.position.x = mobile ? 0 : 2.2;
+        robot.position.y = (mobile ? -0.4 : 0.05) + Math.sin(t) * .04;
+        ring1.position.x = mobile ? 0 : 2.2;
+        ring1.position.z = mobile ? -1 : 0;
+        ring2.position.x = mobile ? 0 : 2.2;
+        ring2.position.z = mobile ? -1 : 0;
+        partSystem.position.x = mobile ? 0 : 2.2;
         robot.rotation.y = Math.sin(t * .3) * .12;
 
         // Arm swing
